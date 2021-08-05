@@ -3,28 +3,35 @@
         <div class="checkers__title">шашки</div>
         <div>
             <h1 class="checkers__info">{{gameInfo}}</h1>
+            <h1>счет: C - {{check[0]}} K - {{check[1]}}</h1>
         </div>
-        <div class="checkers__field" :key="boardKey">
+        <div class="checkers__field" :key="boardKey"  >
+
             <div class="checkers__row" v-for="(line, lineIndex) in board" :key="lineIndex">
                 <div class="checkers__cell"
                      :class="[{'checkers__cell_black-color': getCellColor(lineIndex, cellIndex) },{'checkers__cell_border-color' : cell === 3}]"
                      v-for="(cell, cellIndex) in line"
                      :key="cellIndex"
+                     :id = "getCellColor(lineIndex, cellIndex)"
                      @click="handleClickCell(lineIndex, cellIndex, cell)">
+                    <draggable :id="`${lineIndex}${cellIndex}${cell}`" :disable = "false" group="test" @add="add" style="width: 80px;height: 80px">
                         <div v-if="cell !== 0 && cell!==3" class="checkers__checker"
                              :class="{'checkers__checker_red-color': cell === 2}"></div>
+                    </draggable>
                 </div>
             </div>
+
         </div>
     </div>
 </template>
 
 <script>
-    //import draggable  from "vuedraggable";
+    import draggable from "vuedraggable";
+
     export default {
         name: "Checkers",
-        components:{
-           // draggable
+        components: {
+            draggable
         },
         data: () => {
             return {
@@ -47,6 +54,25 @@
             }
         },
         methods: {
+            add: function (e) {
+                console.log('add')
+                console.log(e)
+                //куда
+                console.log(e.to.id[0])
+                console.log(e.to.id[2])
+                //от куда
+                console.log(e.from.id[0])
+                console.log(e.from.id[2])
+                // находиться ли в черном квадрате
+                console.log(e.path[1].id)
+                if(e.path[1].id)
+                {
+                    this.board[e.from.id[0]][e.from.id[1]] = 0
+                    this.board[e.to.id[0]][e.to.id[1]] = e.to.id[2]
+                }
+                ++this.boardKey
+
+            },
             getCellColor: function (lineIndex, cellIndex) {
                 return ((lineIndex + 1) % 2 == 0 && (cellIndex + 1) % 2 != 0) || ((lineIndex + 1) % 2 != 0 && (cellIndex + 1) % 2 == 0)
             },
@@ -97,29 +123,29 @@
                         }
                     }
 
-                        //если справа или слева есть красная шашка перед синй
-                        if (selectedCell.lineIndex > 1) {
-                            if (this.board[selectedCell.lineIndex - 1][selectedCell.cellIndex - 1] === 2) {
-                                if (this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex - 2] === 0) {
-                                    this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex - 2] = 3
-                                    this.selectedCellMoves = {
-                                        lineIndex: selectedCell.lineIndex - 1,
-                                        cellIndex: selectedCell.cellIndex - 1,
-                                        cell: 2
-                                    }
-                                }
-                            }
-                            if (this.board[selectedCell.lineIndex - 1][selectedCell.cellIndex + 1] === 2) {
-                                if (this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex + 2] === 0) {
-                                    this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex + 2] = 3
-                                    this.selectedCellMoves = {
-                                        lineIndex: selectedCell.lineIndex - 1,
-                                        cellIndex: selectedCell.cellIndex + 1,
-                                        cell: 2
-                                    }
+                    //если справа или слева есть красная шашка перед синй
+                    if (selectedCell.lineIndex > 1) {
+                        if (this.board[selectedCell.lineIndex - 1][selectedCell.cellIndex - 1] === 2) {
+                            if (this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex - 2] === 0) {
+                                this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex - 2] = 3
+                                this.selectedCellMoves = {
+                                    lineIndex: selectedCell.lineIndex - 1,
+                                    cellIndex: selectedCell.cellIndex - 1,
+                                    cell: 2
                                 }
                             }
                         }
+                        if (this.board[selectedCell.lineIndex - 1][selectedCell.cellIndex + 1] === 2) {
+                            if (this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex + 2] === 0) {
+                                this.board[selectedCell.lineIndex - 2][selectedCell.cellIndex + 2] = 3
+                                this.selectedCellMoves = {
+                                    lineIndex: selectedCell.lineIndex - 1,
+                                    cellIndex: selectedCell.cellIndex + 1,
+                                    cell: 2
+                                }
+                            }
+                        }
+                    }
 
                 } else {
                     //если за красной шашкой есть клетка - предлагаем
@@ -181,7 +207,7 @@
                 ++this.boardKey
             },
             handleClickCell: function (lineIndex, cellIndex, cell) {
-                if (cell !== 0 && !this.selectedCell && cell !==3) {
+                if (cell !== 0 && !this.selectedCell && cell !== 3) {
                     this.selectedCell = {
                         lineIndex: lineIndex,
                         cellIndex: cellIndex,
@@ -204,15 +230,14 @@
                             this.board[lineIndex][cellIndex] = 1
                             this.board[this.selectedCell.lineIndex][this.selectedCell.cellIndex] = 0
 
-                            if(this.selectedCellMoves)
-                            {
-                                if(this.selectedCellMoves.lineIndex !== lineIndex && this.selectedCellMoves.cellIndex !== cellIndex)
-                                {
+                            if (this.selectedCellMoves) {
+                                if (this.selectedCellMoves.lineIndex !== lineIndex && this.selectedCellMoves.cellIndex !== cellIndex) {
                                     this.board[this.selectedCellMoves.lineIndex][this.selectedCellMoves.cellIndex] = 0
                                     this.selectedCellMoves = null
+                                    ++this.check[0]
                                 }
                                 //если был упущен ход побить шашку, убираем ее
-                                else{
+                                else {
                                     this.board[lineIndex][cellIndex] = 0
                                 }
                             }
@@ -229,15 +254,14 @@
                             this.board[lineIndex][cellIndex] = 2
                             this.board[this.selectedCell.lineIndex][this.selectedCell.cellIndex] = 0
 
-                            if(this.selectedCellMoves)
-                            {
-                                if(this.selectedCellMoves.lineIndex !== lineIndex && this.selectedCellMoves.cellIndex !== cellIndex)
-                                {
+                            if (this.selectedCellMoves) {
+                                if (this.selectedCellMoves.lineIndex !== lineIndex && this.selectedCellMoves.cellIndex !== cellIndex) {
                                     this.board[this.selectedCellMoves.lineIndex][this.selectedCellMoves.cellIndex] = 0
+                                    ++this.check[1]
                                     this.selectedCellMoves = null
                                 }
                                 //если был упущен ход побить шашку, убираем ее
-                                else{
+                                else {
                                     this.board[lineIndex][cellIndex] = 0
                                 }
                             }
@@ -251,8 +275,7 @@
                             this.deletePossibleMoves()
                         }
                     }
-                }
-                else{
+                } else {
                     //если выбрали шашку
                     this.selectedCell = null
                     this.deletePossibleMoves()
